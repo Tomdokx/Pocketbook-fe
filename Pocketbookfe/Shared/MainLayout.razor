@@ -1,0 +1,46 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization;
+@using MudBlazor
+@using Pocketbookfe.Services;
+
+@inject HttpClient httpClient
+
+@inject IAuthService authService
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+
+        <div class="top-row px-4">
+            @if (isLogged)
+            {
+                <span>Přihlášen</span>
+            }
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+    @code {
+    private bool isLogged = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLogged = await authService.IsUserLogged();
+    }
+
+    void LogOut()
+    {
+        if (httpClient.DefaultRequestHeaders.Authorization != null)
+        {
+            httpClient.DefaultRequestHeaders.Authorization = null;
+        }
+    }
+    
+}

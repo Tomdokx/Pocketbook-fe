@@ -1,0 +1,41 @@
+﻿@page "/"
+
+@using System.Net.Http.Json;
+@using Blazored.LocalStorage;
+@using pocketbookfe.ApiClients.Interfaces;
+@using pocketbookfe.Models;
+
+@inject HttpClient httpClient
+@inject IUserApiClient UserApiClient
+@inject ILocalStorageService _localstorage
+@if(_tabVisible){
+    <MudTable Items="@Users" Hover="true">
+        <HeaderContent>
+        <MudTh>Username</MudTh>
+        <MudTh>Password</MudTh>
+        <MudTh>Active</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Nr">@context.Username</MudTd>
+        <MudTd DataLabel="Sign">@context.Password</MudTd>
+        <MudTd DataLabel="Name">@context.Active</MudTd>
+    </RowTemplate>
+</MudTable>
+}
+
+@code {
+    private bool _hidePosition;
+    private bool _loading;
+    private bool _tabVisible;
+    private string p;
+    private UserModel User { get; set; }
+    private List<UserModel> Users { get; set; } = new List<UserModel>();
+    protected override async Task OnInitializedAsync()
+    {
+        _tabVisible = await _localstorage.ContainKeyAsync("authToken");
+        if (_tabVisible){
+            User = await _localstorage.GetItemAsync<UserModel>("loggedInUser");
+            Users.Add(User);
+        }
+    }
+}

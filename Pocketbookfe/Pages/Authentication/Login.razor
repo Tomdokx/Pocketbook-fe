@@ -1,0 +1,73 @@
+﻿@page "/login"
+@using Blazored.LocalStorage;
+@using Microsoft.AspNetCore.Authorization;
+@using Pocketbookfe.Services;
+@using System.Net.Http.Headers;
+@using System.Security.Claims;
+@using pocketbookfe.Authentication;
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+@attribute [AllowAnonymous]
+
+@inject IAuthService authService
+
+@inject HttpClient httpClient
+@inject NavigationManager NavigationManager
+
+
+<div class="fsh-center-text">
+    <MudText Typo="Typo.h4" GutterBottom="true">Přihlášení</MudText>
+    <MudText>
+        Vyplňte prosím Vaše přihlašovací údaje
+    </MudText>
+</div>
+<br />
+<EditForm Model="@_tokenRequest" OnValidSubmit="@SubmitAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="username">Username:</label>
+        <InputText id="username" @bind-Value="_tokenRequest.Username" />
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password:</label>
+        <InputText id="password" type="password" @bind-Value="_tokenRequest.Password" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@code {
+    private readonly TokenRequest _tokenRequest = new();
+
+    private bool _passwordVisibility;
+    private InputType _passwordInput = InputType.Password;
+    private string _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+
+    private void TogglePasswordVisibility()
+    {
+        if (_passwordVisibility)
+        {
+            _passwordVisibility = false;
+            _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
+            _passwordInput = InputType.Password;
+        }
+        else
+        {
+            _passwordVisibility = true;
+            _passwordInputIcon = Icons.Material.Filled.Visibility;
+            _passwordInput = InputType.Text;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        var loggedIn = await authService.LoginAsync(_tokenRequest);
+        StateHasChanged();
+        if(loggedIn)
+        // Navigate to the home page.
+        NavigationManager.NavigateTo("/",true);
+    }
+}

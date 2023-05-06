@@ -1,0 +1,17 @@
+﻿@page "/logout"
+
+@using Pocketbookfe.Services
+
+@inject IAuthService _authService
+@inject NavigationManager _navigationManager
+
+
+@code{
+	protected override async Task OnInitializedAsync()
+	{
+		await _authService.LogOut();
+		StateHasChanged();
+		_navigationManager.NavigateTo("/",true);
+		
+	}
+}
