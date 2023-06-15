@@ -1,0 +1,16 @@
+@using pocketbookfe.Models;
+
+@if (!string.IsNullOrEmpty(Note.Title))
+{
+	<div class="mb-1"><MudText Typo="Typo.h4">@Note.Title</MudText></div>
+}
+	<div class="mb-2">
+		<MudText Typo="Typo.h6">@Note.CreationDate</MudText>
+	</div>
+	<div>
+		<MudText Typo="Typo.subtitle1">@Note.Content</MudText>
+	</div>
+@code{
+	[Parameter]
+	public NoteModel Note{ get; set; }
+}

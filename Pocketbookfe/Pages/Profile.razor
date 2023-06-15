@@ -1,0 +1,32 @@
+﻿@page "/profile"
+
+@using Blazored.LocalStorage;
+@using Pocketbookfe.Services;
+@using pocketbookfe.Models;
+@inject NavigationManager _navigationManager
+@inject IAuthService _authService
+
+<ProfileDetail User="User">
+
+</ProfileDetail>
+@if(User != null){
+if (User.Admin_role)
+{
+	<MudButton Target="_blank" Href="/admin" Color="Color.Error" Size="Size.Large" StartIcon="@Icons.Custom.Uncategorized.Radioactive">Přejít do admin sekce</MudButton>
+}
+}
+@code {
+
+	public UserModel User { get; set; }
+
+	protected override async Task OnParametersSetAsync()
+	{
+		if(await _authService.IsUserLogged()){
+			User = await _authService.LoggedUser();
+		}
+		else
+		{
+			_navigationManager.NavigateTo("/");
+		}
+	}
+}

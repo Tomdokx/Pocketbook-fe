@@ -2,45 +2,55 @@
 @using Microsoft.AspNetCore.Components.Authorization;
 @using MudBlazor
 @using Pocketbookfe.Services;
+@using pocketbookfe.Models;
 
 @inject HttpClient httpClient
-
+@inject NavigationManager _navigationManager
 @inject IAuthService authService
-
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
-
+ 
         <div class="top-row px-4">
             @if (isLogged)
             {
-                <span>Přihlášen</span>
+                    <MudItem xs="6" Class="d-flex justify-center align-center gap-1">
+                        <span>Přihlášen: @User.Username</span>
+                    <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" aria-label="accountCircle" OnClick="ToProfile"></MudIconButton>			
+                </MudItem>
+                
             }
         </div>
 
         <article class="content px-4">
-            @Body
+             
+				@Body
+            
         </article>
     </main>
 </div>
 
-    @code {
+@code {
     private bool isLogged = false;
+
+    private UserModel User { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         isLogged = await authService.IsUserLogged();
+        if (isLogged)
+            User = await authService.LoggedUser();
     }
 
-    void LogOut()
+    private void ToProfile()
     {
-        if (httpClient.DefaultRequestHeaders.Authorization != null)
-        {
-            httpClient.DefaultRequestHeaders.Authorization = null;
-        }
+        _navigationManager.NavigateTo("/profile");
     }
-    
+
 }

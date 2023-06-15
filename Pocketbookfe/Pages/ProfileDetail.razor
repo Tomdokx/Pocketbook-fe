@@ -1,0 +1,26 @@
+﻿@using pocketbookfe.Models;
+
+@if(User!=null){
+	<MudPaper Elevation="1" Class="w-75 m-3 p-3">
+
+	
+<MudText Typo="Typo.h4" Class="mb-1">Detail profilu @User.Username</MudText>
+
+<div class="d-flex w-75 flex-column justify-center">
+			<div class="m-2">Jméno: <strong>@User.Username</strong></div>
+	
+	<div class="m-2">Aktivní: <strong>@User.Active</strong></div>
+	
+	<div class="m-2">Datum vytvoření profilu: <strong>@User.CreationDate</strong></div>
+
+	<div class="m-2">Počet úkolů: <strong>@User.Tasks.Count</strong></div>
+
+	<div class="m-2">Počet poznámek: <strong>@User.Notes.Count</strong></div>
+	<MudDivider></MudDivider>
+</div>
+	</MudPaper>
+}
+@code {
+	[Parameter]
+	public UserModel User { get; set; }
+}

@@ -8,34 +8,83 @@
 @inject HttpClient httpClient
 @inject IUserApiClient UserApiClient
 @inject ILocalStorageService _localstorage
-@if(_tabVisible){
-    <MudTable Items="@Users" Hover="true">
-        <HeaderContent>
-        <MudTh>Username</MudTh>
-        <MudTh>Password</MudTh>
-        <MudTh>Active</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Nr">@context.Username</MudTd>
-        <MudTd DataLabel="Sign">@context.Password</MudTd>
-        <MudTd DataLabel="Name">@context.Active</MudTd>
-    </RowTemplate>
-</MudTable>
-}
+<MudPaper Elevation="2" Class="pa-16 ma-2">
+@if(User != null)
+{
+        <h1 class="mt-4">Vítejte v Pocketbook</h1>
+    
+            <h2>Zdravím, @User.Username</h2>
+                <p>Děkujeme, že používáte aplikaci Pocketbook ke správě svých úkolů a poznámek. Díky našemu intuitivnímu rozhraní a výkonným funkcím nebylo nikdy jednodušší zůstat organizovaný.</p>
+                <p>Využijte následující funkce:</p>
+            <ul>
+                    <li><strong>Úkoly:</strong> Vytvářejte, upravujte a spravujte své úkoly bez námahy. Mějte přehled o svých úkolech a sledujte svůj pokrok.</li>
+                    <li><strong>Poznámky:</strong>Přidávejte, organizujte a kategorizujte poznámky pro snadné vyhledávání. Zaznamenávejte své myšlenky, nápady a důležité informace.</li>
+                    <li><strong>Profil:</strong> Spravujte svůj osobní profil a přizpůsobte si preference, abyste aplikaci přizpůsobili svým potřebám.</li>
+            </ul>
+                <p>Začněte Pocketbook používat ještě dnes a zvyšte svou produktivitu a zjednodušte si život. Šťastnou organizaci!</p>
+        
+}else{
+
+
+        <h1>Vítejte v Pocketbook</h1>
+
+        <MudText Typo="Typo.body1" Class="mt-4">
+            Vyzkoušejte sílu aplikace Pocketbook, intuitivní a funkčně bohaté aplikace, která vám pomůže udržet si pořádek a efektivně spravovat úkoly a poznámky.
+        </MudText>
+
+        <MudText Typo="Typo.body1" Class="mt-4">
+            Pomocí aplikace Pocketbook můžete snadno vytvářet, organizovat a sledovat své úkoly a poznámky na jednom centrálním místě. Uživatelsky přívětivé rozhraní poskytuje bezproblémové prostředí a umožňuje vám soustředit se na to nejdůležitější - na plnění úkolů.
+        </MudText>
+
+        <MudText Typo="Typo.body1" Class="mt-4">
+            Pocketbook využívá MudBlazor, flexibilní a responzivní knihovnu komponent uživatelského rozhraní založenou na Material Designu, a nabízí tak vizuálně atraktivní a konzistentní uživatelské rozhraní pro všechna zařízení a velikosti obrazovky. Rozsáhlá sbírka předpřipravených komponent MudBlazor umožňuje snadno vytvářet interaktivní a responzivní webové aplikace.
+        </MudText>
+
+        <MudText Typo="Typo.body1" Class="mt-4">
+            <strong>Klíčové vlastnosti:</strong>
+        </MudText>
+
+  <MudList>
+            <MudListItem Text="✓ Vytvářejte, upravujte a spravujte úkoly bez námahy.">
+        
+    </MudListItem>
+
+            <MudListItem Text="✓ Přidávejte, organizujte a kategorizujte poznámky pro snadné vyhledávání.">
+      
+    </MudListItem>
+            <MudListItem Text="✓ Bezpečně se přihlaste a spravujte svůj osobní profil.">
+      
+    </MudListItem>
+            <MudListItem Text="✓ Přizpůsobte si předvolby a nastavení a přizpůsobte aplikaci svým potřebám.">
+      
+    </MudListItem>
+            <MudListItem Text="✓ Užijte si citlivé a uživatelsky přívětivé rozhraní vytvořené pomocí MudBlazor.">
+      
+    </MudListItem>
+  </MudList>
+
+        <MudText Typo="Typo.body1" Class="mt-4">
+            Zažijte produktivitu jako nikdy předtím s aplikací Pocketbook. Začněte organizovat své úkoly a poznámky ještě dnes a zjednodušte si život.
+        </MudText>
+
+        <MudText Typo="Typo.body1" Class="mt-4">
+            Začněte tím, že se zaregistrujete nebo přihlásíte ke svému účtu Pocketbook!
+        </MudText>
+    }
+</MudPaper>
 
 @code {
     private bool _hidePosition;
     private bool _loading;
     private bool _tabVisible;
     private string p;
-    private UserModel User { get; set; }
-    private List<UserModel> Users { get; set; } = new List<UserModel>();
+    private UserModel? User { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         _tabVisible = await _localstorage.ContainKeyAsync("authToken");
         if (_tabVisible){
             User = await _localstorage.GetItemAsync<UserModel>("loggedInUser");
-            Users.Add(User);
         }
     }
 }

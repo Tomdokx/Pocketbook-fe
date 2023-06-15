@@ -1,0 +1,135 @@
+﻿@page "/tasks"
+@using Pocketbookfe.Pages.Dialogs;
+@using Pocketbookfe.Services;
+@using pocketbookfe.ApiClients.Interfaces;
+@using pocketbookfe.Models;
+
+@inject IAuthService _authService
+@inject NavigationManager _navigationManager
+@inject ITaskApiClient _taskApiClient
+@inject IDialogService Dialog
+
+<MudPaper Class="pa-16 ma-2" Elevation="2">
+	<h2>Task List</h2>
+    <MudIconButton Icon="@Icons.Material.Filled.Add" aria-label="Add new" Color="Color.Primary" OnClick="(()=>ShowAddDialog())"></MudIconButton>
+    <br />
+    @if(TaskListDisplay.Count > 0){
+    <MudTable Items="@TaskListDisplay" Hover="true" SortLabel="Sort By">
+        <HeaderContent>
+            <MudTh></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TaskModel, object>(x=>x.Done)">Dokončeno</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TaskModel, object>(x=>x.Id)">Id</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<TaskModel, object>(x=>x.Title)">Nadpis</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TaskModel, object>(x=>x.Description)">Popis</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TaskModel, object>(x=>x.CreationDate)">Vytvořeno</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TaskModel, object>(x=>x.DeletedDate)">Upraveno</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TaskModel, object>(x=>x.Notes.Count)">Poznámky</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudIconButton OnClick="@(()=>TaskDetail(context))" Icon="@Icons.Material.Filled.Article" aria-label="delete"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>Delete(context.Id))"></MudIconButton>
+                </MudTd>
+                <MudTd DataLabel="Done"><MudCheckBox T="bool" Checked="context.Done" CheckedChanged="@(() => ChangeDone(context))"></MudCheckBox></MudTd>
+            <MudTd DataLabel="Id">@context.Id</MudTd>
+                @if (context.Title.Length > 10)
+                {
+                    <MudTd DataLabel="Description">@context.Title.Substring(0,10)...</MudTd>
+                }
+                else
+                {
+                    <MudTd DataLabel="Description">@context.Title</MudTd>
+                }
+            @if(context.Description.Length > 15){
+                    <MudTd DataLabel="Description">@context.Description.Substring(0,15)...</MudTd>
+                }
+                else
+                {
+                    <MudTd DataLabel="Description">@context.Description</MudTd>
+                }
+                <MudTd DataLabel="Creation_Date">@context.CreationDate</MudTd>
+            <MudTd DataLabel="Update_Date">@context.UpdateDate</MudTd>
+            <MudTd DataLabel="NotesCount">@context.Notes.Count</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+        </PagerContent>
+        </MudTable>
+    }
+    else
+    {
+        <MudText Typo="Typo.h4" Color="Color.Warning">Nemáte tu žádné úkoly</MudText>
+    }
+    <MudSwitch T="bool" Color="Color.Primary" CheckedChanged="@(() => WithDoneChange())">Zobrazit i hotové úkoly</MudSwitch>
+</MudPaper>
+
+@code {
+
+    public List<TaskModel> TaskList { get; set; } = new List<TaskModel>();
+    public List<TaskModel> TaskListDisplay { get; set; } = new List<TaskModel>();
+    public bool withDone = false;
+    public UserModel LoggedUser;
+    protected override async Task OnInitializedAsync()
+    {
+        if (await _authService.IsUserLogged())
+        {
+            LoggedUser = await _authService.LoggedUser();
+            await LoadTasks();
+        }
+        else
+            _navigationManager.NavigateTo("/");
+    }
+    private async Task LoadTasks()
+    {
+        TaskList = await _taskApiClient.GetTasksByUserIdAsync((int)LoggedUser.Id);
+        TaskList = TaskList.Where(p => p.Deleted == false).ToList();
+        LoggedUser.Tasks = TaskList;
+        _ = await _authService.UpdateUser(LoggedUser);
+        if (withDone)
+            TaskListDisplay = TaskList.ToList();
+        else
+            TaskListDisplay = TaskList.Where(p => p.Done == false).ToList();
+        StateHasChanged();
+    }
+
+    private async void ShowAddDialog()
+    {
+        DialogOptions dialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = Dialog.Show<TaskDialog>("Přidání nového záznamu úkolu", dialogOptions);
+        var result = await dialog.Result;
+        await LoadTasks();
+    }
+
+    private async void Delete(int id)
+    {
+        bool isFine = await _taskApiClient.DeleteTask(id);
+        if (isFine)
+            LoadTasks();
+    }
+
+    private void TaskDetail(TaskModel? task)
+    {
+        if(task != null)
+            _navigationManager.NavigateTo($"/taskDetail/{task.Id}");
+    }
+
+    private async void ChangeDone(TaskModel task)
+    {
+        task.Done = true;
+        bool isFine = await _taskApiClient.ChangeDone(task.Id);
+        if (isFine)
+            await LoadTasks();
+    }
+
+    private async void WithDoneChange()
+    {
+        withDone = !withDone;
+        if(withDone)
+            TaskListDisplay = TaskList.ToList();
+        else
+        {
+            TaskListDisplay = TaskList.Where(p => p.Done != true).ToList();
+        }
+        StateHasChanged();
+    }
+}

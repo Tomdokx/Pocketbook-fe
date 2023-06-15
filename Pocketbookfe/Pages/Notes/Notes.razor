@@ -1,0 +1,80 @@
+﻿@page "/notes"
+@using Pocketbookfe.Services;
+@using pocketbookfe.ApiClients.Interfaces;
+@using pocketbookfe.Models;
+
+@inject INoteApiClient _noteApiClient
+@inject IAuthService _authService
+
+<h2>Poznámky</h2>
+
+<MudContainer>
+    <MudPaper Elevation="0" Class="w-50 mb-1 bt-2">
+    <MudTextField T="string" Label="Nadpis" Variant="Variant.Outlined" @bind-Text="NoteTitle" Lines="1" OnlyValidateIfDirty="true" Required />
+    <MudTextField T="string" Label="Poznámka" Variant="Variant.Outlined" @bind-Text="NoteText" Lines="4" OnlyValidateIfDirty="true" Required />
+    <MudButton Class="float-end mb-1 mt-1" Variant="Variant.Filled" Color="Color.Primary" OnClick="AddNote">Přidat poznámku</MudButton>
+    </MudPaper>
+    <MudDivider></MudDivider>
+    
+    @if (NoteList.Count > 0)
+    {
+        <MudGrid>
+
+            @foreach(NoteModel note in NoteList){
+            <MudItem xs="6" Class="m-4" >
+                <MudPaper Elevation="1" Class="p-2 m-1">
+                <NoteCard Note="note" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(()=>DeleteNote(note.Id))"></MudIconButton>
+                </MudPaper>
+            </MudItem>
+            }
+        </MudGrid>
+    }
+    else
+    {
+        <MudText Typo="Typo.h4" Color="Color.Warning">Nemáte tu žádné poznámky</MudText>
+    }
+</MudContainer>
+@code {
+    private List<NoteModel> NoteList { get; set; } = new List<NoteModel>();
+    private UserModel? LoggedUser { get; set; }
+    private string NoteText { get; set; } = string.Empty;
+    private string NoteTitle { get; set; } = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        LoggedUser = await _authService.LoggedUser();
+        await LoadNotes();
+    }
+
+    private async Task LoadNotes()
+    {
+        NoteList.Clear();
+        if(LoggedUser != null){
+            NoteList = await _noteApiClient.GetNotesByUserIdAsync(LoggedUser.Id.Value);
+        }
+        StateHasChanged();
+    }
+    private async Task AddNote()
+    {
+        NoteModel note = new NoteModel
+            {
+                Title = NoteTitle,
+                Content = NoteText
+            };
+        var success = await _noteApiClient.AddNewNoteToOwner(LoggedUser.Id.Value, note);
+        if (success)
+        {
+            NoteText = string.Empty;
+            NoteTitle = string.Empty;
+            await LoadNotes();
+        }
+    }
+    private async Task DeleteNote(int id)
+    {
+        var success = await _noteApiClient.DeleteNote(id);
+        if (success)
+        {
+            await LoadNotes();
+        }
+    }
+}

@@ -1,0 +1,81 @@
+﻿@using Pocketbookfe.Services;
+@using pocketbookfe.ApiClients.Interfaces;
+@using pocketbookfe.Models;
+
+@inject ITaskApiClient TaskApiClient
+@inject IAuthService AuthService
+
+<MudDialog>
+    <DialogContent>
+        <MudPaper Class="pa-4">
+            @if (AddSuccessed != null)
+            {
+                @if ((bool)AddSuccessed)
+                {
+                    <MudText Color="Color.Success">Přidání nového úkolu se zdařilo</MudText>
+                }
+                
+            else
+                {
+                    <MudText Color="Color.Warning">Přidání nového úkolu se nezdařilo</MudText>
+                }
+            }
+            
+            <MudForm @ref="form" @bind-IsValid="@success">
+                <MudTextField T="string" Label="Nadpis" Required="true" @bind-Text="TaskTitle" RequiredError="Nadpis je povinný!" />
+                <MudTextField T="string" Label="Popis" Required="true" @bind-Text="TaskDescription" RequiredError="Popis je povinný!" Lines="5" />
+                
+                <div class="d-flex align-center justify-space-between">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" OnClick="AddNew" Class="ml-auto">Přidat úkol</MudButton>
+                </div>
+            </MudForm>
+        </MudPaper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Cancel">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    bool success;
+    MudForm form;
+    UserModel User { get; set; }
+    public bool? AddSuccessed = null;
+    public string TaskTitle { get; set; } = string.Empty;
+    public string TaskDescription { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        User = await AuthService.LoggedUser();
+    }
+
+    public async void AddNew()
+    {
+
+        TaskModel newTask = new TaskModel
+            {
+                Id = 0,
+                Title = TaskTitle,
+                Description = TaskDescription,
+                CreationDate = DateTime.Now,
+                UpdateDate = DateTime.Now,
+                Author = User
+            };
+
+        AddSuccessed = await TaskApiClient.AddNewTask(newTask);
+        if ((bool)AddSuccessed && User.Id != null)
+        {
+            User.Tasks = await TaskApiClient.GetTasksByUserIdAsync((int)User.Id);
+        }
+        ResetInputs();
+    }
+    void ResetInputs()
+    {
+        TaskTitle = string.Empty;
+        TaskDescription = string.Empty;
+        StateHasChanged();
+    }
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+}

@@ -13,38 +13,48 @@
 @inject HttpClient httpClient
 @inject NavigationManager NavigationManager
 
-
+<MudPaper Width="50%" Class="pa-16 ma-2">
 <div class="fsh-center-text">
-    <MudText Typo="Typo.h4" GutterBottom="true">Přihlášení</MudText>
+    <MudText Typo="Typo.h3" GutterBottom="true">Přihlášení</MudText>
     <MudText>
-        Vyplňte prosím Vaše přihlašovací údaje
+        Vyplňte prosím Vaše přihlašovací údaje.
     </MudText>
+    @if (failed)
+    {
+        <MudText Typo="Typo.h4 " Color="Color.Error" >
+            Přihlášení se nezdařilo. Zkontrolujte prosím přihlašovací údaje.
+        </MudText>
+    }
 </div>
 <br />
 <EditForm Model="@_tokenRequest" OnValidSubmit="@SubmitAsync">
     <DataAnnotationsValidator />
     <ValidationSummary />
+    <div class="">
+        <div class="form-group m-2">
 
-    <div class="form-group">
-        <label for="username">Username:</label>
-        <InputText id="username" @bind-Value="_tokenRequest.Username" />
+                <MudTextField id="username" Label="Přihlašovací jméno" Variant="Variant.Outlined" OnlyValidateIfDirty="true" @bind-Value="_tokenRequest.Username" />
+        </div>
+
+        <div class="form-group m-2">
+
+                <MudTextField @bind-Value="_tokenRequest.Password" Label="Heslo" OnlyValidateIfDirty="true" Variant="Variant.Outlined" InputType="@_passwordInput" Adornment="Adornment.End" AdornmentIcon="@_passwordInputIcon" OnAdornmentClick="TogglePasswordVisibility" AdornmentAriaLabel="Show Password" />
+        </div>
+        <div class=" align-self-center 75 m-2 ">
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="ml-auto" ButtonType="ButtonType.Submit">Přihlásit</MudButton>
+        </div>
+        
     </div>
-
-    <div class="form-group">
-        <label for="password">Password:</label>
-        <InputText id="password" type="password" @bind-Value="_tokenRequest.Password" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Login</button>
+    
 </EditForm>
-
+</MudPaper>
 @code {
     private readonly TokenRequest _tokenRequest = new();
 
     private bool _passwordVisibility;
     private InputType _passwordInput = InputType.Password;
     private string _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
-
+    private bool failed = false;
 
     private void TogglePasswordVisibility()
     {
@@ -67,7 +77,11 @@
         var loggedIn = await authService.LoginAsync(_tokenRequest);
         StateHasChanged();
         if(loggedIn)
-        // Navigate to the home page.
-        NavigationManager.NavigateTo("/",true);
+            // Navigate to the home page.
+            NavigationManager.NavigateTo("/",true);
+        else
+        {
+            failed = true;
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using pocketbookfe.Authentication;
+using pocketbookfe.Models;
 using Pocketbookfe.Authentication;
 
 namespace Pocketbookfe.Services
@@ -10,5 +11,9 @@ namespace Pocketbookfe.Services
         Task<bool> IsUserLogged();
 
         Task<bool> LogOut();
+
+        Task<UserModel> LoggedUser();
+
+        Task<bool> UpdateUser(UserModel user);
     }
 }

@@ -6,6 +6,11 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using Blazored.LocalStorage;
 using System.Net.Http.Headers;
+using pocketbookfe.Models;
+using Microsoft.Extensions.Options;
+using Pocketbookfe.Shared;
+using System.Text.Json;
+using pocketbookfe.ApiClients;
 
 namespace Pocketbookfe.Services
 {
@@ -31,7 +36,9 @@ namespace Pocketbookfe.Services
 
             if (response.IsSuccessStatusCode)
             {
-                var loginModel = await response.Content.ReadFromJsonAsync<LoginModel>();
+                var options = new JsonSerializerOptions() { WriteIndented = true, PropertyNameCaseInsensitive = true };
+                options.Converters.Add(new DateFormatConverter("yyyy-MM-dd HH:mm:ss"));
+                var loginModel = await response.Content.ReadFromJsonAsync<LoginModel>(options);
                 if (loginModel != null)
                 {
                     var identity = new ClaimsIdentity(new[] {
@@ -70,5 +77,19 @@ namespace Pocketbookfe.Services
 
 			return true;
         }
-	}
+
+        public async Task<UserModel> LoggedUser()
+        {
+            if (await localStorage.ContainKeyAsync("loggedInUser"))
+                return await localStorage.GetItemAsync<UserModel>("loggedInUser");
+            else
+                return null;
+        }
+
+        public async Task<bool> UpdateUser(UserModel user)
+        {
+            await localStorage.SetItemAsync("loggedInUser", user);
+            return true;
+        }
+    }
 }

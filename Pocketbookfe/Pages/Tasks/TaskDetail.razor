@@ -1,0 +1,133 @@
+﻿@page "/taskDetail/{TaskId:int}"
+
+@using Pocketbookfe.Pages.Notes
+@using Pocketbookfe.Services;
+@using pocketbookfe.ApiClients.Interfaces;
+@using pocketbookfe.Models;
+
+@inject ITaskApiClient _taskApiClient
+@inject IAuthService _authService
+@inject INoteApiClient _noteApiClient
+@inject NavigationManager _navigationManager
+
+
+@if(DetailedTask != null){
+<MudPaper Elevation="1" Class="py-1 px-10 m-2 p-5">
+	<MudText Typo="Typo.h3">Detail úkolu</MudText>
+	<MudPaper Elevation="0">
+		<div>
+			<MudText Typo="Typo.h5">Nadpis: </MudText>
+			<MudText Typo="Typo.body1">@DetailedTask.Title</MudText>
+		</div>
+		<div>
+			<MudText Typo="Typo.h5">Datum vytvoření: </MudText>
+			<MudText Typo="Typo.body1">@DetailedTask.CreationDate</MudText>
+		</div>
+		<div>
+			<MudText Typo="Typo.h5">Datum změny: </MudText>
+			<MudText Typo="Typo.body1">@DetailedTask.UpdateDate</MudText>
+		</div>
+		<div>
+			<MudText Typo="Typo.h5">Popis úkolu: </MudText>
+			<div>
+				<p>@DetailedTask.Description</p>
+			</div>
+		</div>
+		<div>
+			<MudText Typo="Typo.h5">
+				Úkol: 
+				@UkolDone
+			</MudText>
+		</div>
+		<MudDivider></MudDivider>
+
+		<div class="mt-1">
+			<MudPaper Elevation="0" Class="w-75">
+				<MudText Typo="Typo.h4">Poznámky k úkolu</MudText>
+				<MudTextField T="string" Label="Poznámka" Variant="Variant.Outlined" @bind-Text="NoteText" Lines="4" />
+				<MudButton Class="float-end" Variant="Variant.Filled" Color="Color.Primary" OnClick="AddNote">Přidat poznámku</MudButton>
+			</MudPaper>
+			<MudDivider></MudDivider>
+			@if (DetailedTask.Notes.Count > 0)
+			{
+				<MudStack>
+					@foreach (NoteModel note in DetailedTask.Notes)
+					{
+						<MudPaper Elevation="1" Class="w-50 p-2" >
+							<NoteCard Note="note"></NoteCard>
+							<MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Default" OnClick="@(()=> DeleteNoteFromTask(note.Id))"></MudIconButton>
+						</MudPaper>
+					}
+					</MudStack>
+				}
+				else
+				{
+					<MudText Typo="Typo.h4" Color="Color.Warning">Nemáte tu žádné poznámky</MudText>
+				}
+
+		</div>
+	</MudPaper>
+</MudPaper>
+}
+@code {
+
+	[Parameter]
+	public int TaskId { get; set; }
+
+	private TaskModel? DetailedTask { get; set; }
+
+	private string UkolDone { get; set; } = string.Empty;
+
+	private string NoteText { get; set; } = string.Empty;
+
+	protected async override Task OnParametersSetAsync()
+	{
+		UserModel loggedUser = await _authService.LoggedUser();
+		await LoadTask();
+		if (!loggedUser.Tasks.Contains(DetailedTask))
+			_navigationManager.NavigateTo("/");
+	}
+
+	private async Task LoadTask()
+	{
+		TaskModel task = await _taskApiClient.GetTaskById(TaskId);
+		DetailedTask = task;
+		await RefreshNotesInTask();
+		UkolDone = DetailedTask.Done ? "Splněn" : "Nesplněn";
+		StateHasChanged();
+	}
+
+	private async Task AddNote()
+	{
+		NoteModel note = new NoteModel
+			{
+				Content = NoteText
+			};
+		var success = await _noteApiClient.AddNewNoteToAssignment(TaskId, note);
+		if (success)
+		{
+			await RefreshNotesInTask();
+			StateHasChanged();
+		}
+	}
+
+	private async Task RefreshNotesInTask()
+	{
+		var notes = await _noteApiClient.GetNotesByTaskIdAsync(TaskId);
+		if(DetailedTask!=null && notes != null){
+			notes = notes.Where(n => n.Deleted == false).ToList();
+			DetailedTask.Notes = notes;
+			
+		}
+	}
+
+	private async Task DeleteNoteFromTask(int id)
+	{
+		var s = await _noteApiClient.DeleteNote(id);
+		if (s)
+		{
+			await RefreshNotesInTask();
+			StateHasChanged();
+		}
+	}
+}

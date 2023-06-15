@@ -1,0 +1,98 @@
+﻿@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using pocketbookfe.ApiClients.Interfaces;
+@using pocketbookfe.Models;
+
+@inject IUserApiClient UserApiClient
+@inject NavigationManager NavigationManager
+@page "/registration"
+<MudPaper Width="50%" Class="pa-16 ma-2">
+    <MudText Typo="Typo.h3" GutterBottom="true">Registrace</MudText>
+    <MudText>
+        Vyplňte prosím údaje pro registraci.
+    </MudText>
+    <MudText Color="Color.Error" Typo="Typo.h5">@DisplayText</MudText>
+<MudForm @ref="form" @bind-IsValid="@success" >
+        <MudTextField T="string" Variant="Variant.Outlined" OnlyValidateIfDirty="true" Label="Jméno" Required="true" RequiredError="Uživatelské jméno je povinné!" @bind-Text="UsernameText" />
+        
+        <MudTextField T="string" Variant="Variant.Outlined"  Label="Heslo" @ref="pwField1" @bind-Text="PasswordText"
+                  InputType="InputType.Password"
+                      Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))" OnlyValidateIfDirty="true" Required="true"
+                  RequiredError="Heslo je povinné!" />
+
+        <MudTextField T="string" Variant="Variant.Outlined" OnlyValidateIfDirty="true" @bind-Text="PasswordMatchText"
+                  Label="Potvrzení hesla" HelperText="Opakuj heslo" InputType="InputType.Password"
+                      RequiredError="Povrzení hesla je povinné!"
+                  Validation="@(new Func<string, string>(PasswordMatch))" />
+
+    <div class="d-flex align-center justify-space-between">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" OnClick=Register Class="ml-auto">Registrovat</MudButton>
+    </div>
+</MudForm>
+</MudPaper>
+@code {
+    bool success;
+    MudTextField<string> pwField1;
+    MudForm form;
+
+    public string DisplayText { get; set; } = string.Empty;
+
+    public string UsernameText { get; set; } = string.Empty;
+    public string PasswordText { get; set; } = string.Empty;
+    public string PasswordMatchText { get; set; } = string.Empty;
+
+    private IEnumerable<string> PasswordStrength(string pw)
+    {
+        if (string.IsNullOrWhiteSpace(pw))
+        {
+            yield break;
+        }
+        if (pw.Length < 8)
+            yield return "Heslo musí být delší než 8 znaků";
+        if (!Regex.IsMatch(pw, @"[A-Z]"))
+            yield return "Heslo musí obsahovat alespoň jedno velké písmeno";
+        if (!Regex.IsMatch(pw, @"[a-z]"))
+            yield return "Heslo musí obsahovat alespoň jedno malé písmeno";
+        if (!Regex.IsMatch(pw, @"[0-9]"))
+            yield return "Heslo musí obsahovat alespoň jedno číslo";
+    }
+
+    private string PasswordMatch(string arg)
+    {
+        if (pwField1.Value != arg)
+            return "Hesla se neshodují!";
+        return null;
+    }
+
+    private async void Register()
+    {
+        //var passHash = BCrypt.Net.BCrypt.HashPassword(PasswordText);
+        UserModel user = new UserModel
+            {
+                Id = null,
+                Username = UsernameText,
+                Password = PasswordText,
+                Notes = new List<NoteModel>(),
+                Tasks = new List<TaskModel>(),
+                Active = true,
+                Admin_role = false,
+                Deleted = false,
+                CreationDate = DateTime.Now,
+                UpdateDate = DateTime.Now
+            };
+        var result = await UserApiClient.RegisterUser(user);
+
+        if (result)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            DisplayText = "Bohužel nedošlo k registraci. Zkuste to znovu!";
+            UsernameText = string.Empty;
+            PasswordText = string.Empty;
+            PasswordMatchText = string.Empty;
+            StateHasChanged();
+        }
+    }
+}
